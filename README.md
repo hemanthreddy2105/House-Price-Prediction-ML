@@ -1,168 +1,124 @@
-# 🏠 House Price Prediction Using Machine Learning
+# 🏠 House Price Prediction — End-to-End Machine Learning
 
-## 📌 Project Overview
+Predict house prices from physical features and amenities using a leak-free scikit-learn pipeline, cross-validated model selection and hyper-parameter tuning.
 
-This project develops a Machine Learning model to predict house prices based on various housing features. It follows the complete machine learning pipeline, including data preprocessing, exploratory data analysis (EDA), model building, evaluation, and prediction.
+![Python](https://img.shields.io/badge/Python-3.10%2B-blue) ![scikit-learn](https://img.shields.io/badge/scikit--learn-Pipeline-orange) ![License](https://img.shields.io/badge/License-MIT-green)
 
-The project compares multiple regression algorithms to identify the best-performing model for accurate house price prediction.
+## 📌 Highlights
 
----
+| | |
+|---|---|
+| **Best model** | Ridge Regression (selected by 5-fold CV, tuned with `GridSearchCV`) |
+| **Test R²** | **0.967** (baseline "predict the mean": −0.05) |
+| **Test MAE** | ≈ 397,700 — about **3.9 %** of the average price |
+| **Overfitting check** | Train R² ≈ Test R² (gap ≈ 0) |
+| **Top driver** | `Area_sqft`, then `Bedrooms` and `Bathrooms` |
 
 ## 🎯 Objective
 
-The primary objective of this project is to predict the selling price of houses using machine learning techniques based on different property characteristics such as area, number of bedrooms, bathrooms, parking availability, furnishing status, and other housing features.
-
----
+Predict the selling price of a house from 12 features and identify which of them actually drive the price.
 
 ## 📂 Dataset
 
-The dataset contains information about residential properties with features including:
+`data/House_Price_Prediction_Dataset.xlsx` — 500 houses × 13 columns, no missing values, no duplicates, no IQR outliers.
 
-- Area (Square Feet)
-- Bedrooms
-- Bathrooms
-- Stories
-- Main Road Access
-- Guest Room
-- Basement
-- Hot Water Heating
-- Air Conditioning
-- Parking Spaces
-- Preferred Area
-- Furnishing Status
+| Type | Features |
+|---|---|
+| Numeric | `Area_sqft`, `Bedrooms`, `Bathrooms`, `Stories`, `Parking` |
+| Yes/No | `MainRoad`, `GuestRoom`, `Basement`, `HotWaterHeating`, `AirConditioning`, `PreferredArea` |
+| Categorical | `FurnishingStatus` (Furnished / Semi-Furnished / Unfurnished) |
+| **Target** | `Price` |
 
-**Target Variable**
+## 🔬 Methodology
 
-- House Price
+1. **Data validation** – shape, dtypes, missing values, duplicates, IQR outlier check.
+2. **EDA** – price/area distributions, price vs. every feature, annotated correlation heatmap.
+3. **Train/test split (80/20)** – the test set is touched only once, at the end.
+4. **Pipeline** – `ColumnTransformer` (StandardScaler for numeric, One-Hot for categorical) + model, so encoding is fitted on training data only and the model accepts **raw** input.
+5. **Model comparison** – Linear, Ridge, Decision Tree, Random Forest, Gradient Boosting with 5-fold CV (R², RMSE, MAE).
+6. **Tuning** – `GridSearchCV` on the best model family.
+7. **Final evaluation** – test metrics, train-vs-test gap, mean-predictor baseline.
+8. **Diagnostics** – actual-vs-predicted, residual plot, residual histogram.
+9. **Interpretation** – permutation importance on the original columns.
+10. **Deployment-style prediction** – predict a new house from raw values; model saved with `joblib`.
 
----
+## 📊 Results
 
-## 🛠 Technologies Used
+Cross-validation on the training set (5-fold):
 
-- Python
-- Pandas
-- NumPy
-- Matplotlib
-- Scikit-learn
-- OpenPyXL
-- Google Colab
+| Model | CV R² | CV RMSE | CV MAE |
+|---|---|---|---|
+| **Ridge** | **0.962** | 482,492 | 419,255 |
+| Linear Regression | 0.962 | 482,580 | 419,114 |
+| Gradient Boosting | 0.93 | 644,938 | 530,235 |
+| Random Forest | 0.91 | 740,980 | 610,492 |
+| Decision Tree | 0.81 | 1,078,806 | 857,502 |
 
----
+Simple linear models beat the tree-based ones because price in this dataset is almost linear in area.
 
-## 📊 Project Workflow
+<p align="center">
+  <img src="images/model_comparison.png" width="48%">
+  <img src="images/correlation_heatmap.png" width="48%">
+</p>
+<p align="center">
+  <img src="images/actual_vs_predicted_residuals.png" width="100%">
+</p>
+<p align="center">
+  <img src="images/feature_importance.png" width="60%">
+</p>
 
-### 1. Data Loading
-- Import dataset
-- Understand dataset structure
+## 💡 Insights
 
-### 2. Data Understanding
-- Shape of dataset
-- Data types
-- Statistical summary
-- Missing values
-- Duplicate values
+- **Area is the dominant driver** (correlation 0.89 with price; median ≈ 3,400 per sq ft).
+- Bedrooms and bathrooms add smaller but real signal.
+- Amenities (guest room, basement, hot-water heating, furnishing, …) change average price by < 5 % and add almost nothing once size is known.
+- Residuals are centred near zero with no visible pattern, so the linear model is a good fit.
 
-### 3. Exploratory Data Analysis (EDA)
-- Distribution of house prices
-- Area distribution
-- Scatter plots
-- Correlation heatmap
-- Feature relationships
+## ⚠️ Limitations
 
-### 4. Data Preprocessing
-- Label Encoding
-- Feature Selection
-- Train-Test Split
+- Only 500 rows; the data looks **synthetic** (very clean, near-linear, negligible amenity effects), so scores will not transfer to real listings without retraining.
+- No location, house age or sale date; currency is not stated in the dataset.
+- Predictions outside the training area range (605–4,992 sq ft) are unreliable.
 
-### 5. Model Building
-The following Machine Learning models were implemented:
+## 🚀 Run it
 
-- Linear Regression
-- Decision Tree Regressor
-- Random Forest Regressor
+```bash
+git clone https://github.com/hemanthreddy2105/House-Price-Prediction-ML.git
+cd House-Price-Prediction-ML
+pip install -r requirements.txt
+jupyter notebook House_Price_Prediction.ipynb   # Restart & Run All
+```
 
-### 6. Model Evaluation
+Or open the notebook in Google Colab and upload `data/House_Price_Prediction_Dataset.xlsx` next to it.
 
-Models were evaluated using:
+Use the saved model:
 
-- Mean Absolute Error (MAE)
-- Root Mean Squared Error (RMSE)
-- R² Score
+```python
+import joblib, pandas as pd
+model = joblib.load("models/house_price_model.joblib")
+house = pd.DataFrame([{"Area_sqft": 1600, "Bedrooms": 3, "Bathrooms": 2, "Stories": 1,
+    "MainRoad": "Yes", "GuestRoom": "No", "Basement": "No", "HotWaterHeating": "No",
+    "AirConditioning": "Yes", "Parking": 1, "PreferredArea": "Yes",
+    "FurnishingStatus": "Semi-Furnished"}])
+print(model.predict(house)[0])
+```
 
-### 7. Prediction
-- Predict house prices for new property data.
-
-### 8. Feature Importance
-- Identify the most influential features affecting house prices.
-
-### 9. Residual Analysis
-- Evaluate prediction errors to assess model performance.
-
----
-
-## 📈 Results
-
-- Successfully trained and evaluated multiple regression models.
-- Compared model performance using evaluation metrics.
-- Identified the best-performing regression algorithm.
-- Generated accurate house price predictions.
-- Analyzed feature importance for business insights.
-
-
----
-
-## 📁 Project Structure
+## 📁 Project structure
 
 ```
 House-Price-Prediction-ML/
-│
-├── House_Price_Prediction.ipynb
-├── House_Price_Prediction_Dataset.xlsx
-├── README.md
+├── House_Price_Prediction.ipynb   # full analysis with saved outputs
+├── data/House_Price_Prediction_Dataset.xlsx
+├── images/                        # figures generated by the notebook
+├── models/house_price_model.joblib
 ├── requirements.txt
-├── images/
-│   ├── correlation_heatmap.png
-│   ├── feature_importance.png
-│   ├── actual_vs_predicted.png
-│   └── residual_plot.png
+├── LICENSE
+└── README.md
 ```
-
----
-
-## 💡 Business Insights
-
-- Larger houses generally have higher market prices.
-- Premium amenities positively influence selling price.
-- Preferred residential areas command higher prices.
-- Property characteristics significantly impact valuation.
-- Machine Learning provides reliable price estimation.
-
----
-
-## 📚 Machine Learning Concepts Used
-
-- Regression
-- Data Preprocessing
-- Label Encoding
-- Train-Test Split
-- Linear Regression
-- Decision Tree Regression
-- Random Forest Regression
-- Feature Importance
-- Model Evaluation
-- Residual Analysis
-
----
 
 ## 👨‍💻 Author
 
-**Hemanth Reddy**
+**Hemanth Reddy** — B.Sc. Economics (Data Science), Shiv Nadar University Chennai
+GitHub: [@hemanthreddy2105](https://github.com/hemanthreddy2105)
 
-B.Sc. Economics (Data Science)  
-Shiv Nadar University Chennai
-
-GitHub: https://github.com/hemanthreddy2105
-
----
-
-## ⭐ If you found this project helpful, consider giving it a Star!
+If this helped you, consider giving it a ⭐!
