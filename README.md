@@ -1,67 +1,61 @@
-# 🏠 House Price Prediction — End-to-End Machine Learning
+# 🏠 House Price Prediction Using Machine Learning
 
-Predict house prices from physical features and amenities using a leak-free scikit-learn pipeline, cross-validated model selection and hyper-parameter tuning.
+Predict house prices from property features by comparing three regression models (Linear Regression, Decision Tree, Random Forest).
 
-![Python](https://img.shields.io/badge/Python-3.10%2B-blue) ![scikit-learn](https://img.shields.io/badge/scikit--learn-Pipeline-orange) ![License](https://img.shields.io/badge/License-MIT-green)
+![Python](https://img.shields.io/badge/Python-3.10%2B-blue) ![scikit-learn](https://img.shields.io/badge/scikit--learn-regression-orange) ![License](https://img.shields.io/badge/License-MIT-green)
 
 ## 📌 Highlights
 
 | | |
 |---|---|
-| **Best model** | Ridge Regression (selected by 5-fold CV, tuned with `GridSearchCV`) |
-| **Test R²** | **0.967** (baseline "predict the mean": −0.05) |
-| **Test MAE** | ≈ 397,700 — about **3.9 %** of the average price |
-| **Overfitting check** | Train R² ≈ Test R² (gap ≈ 0) |
-| **Top driver** | `Area_sqft`, then `Bedrooms` and `Bathrooms` |
+| **Best model** | Linear Regression |
+| **Test R²** | **0.967** |
+| **Test MAE** | ≈ 396,600 (about 4 % of the average price) |
+| **Top driver** | `Area_sqft` (≈ 83 % of Random Forest importance, correlation 0.89 with price) |
 
 ## 🎯 Objective
 
-Predict the selling price of a house from 12 features and identify which of them actually drive the price.
+Predict the selling price of houses from features such as area, bedrooms, bathrooms, parking and furnishing status, and find out which features matter most.
 
 ## 📂 Dataset
 
-`data/House_Price_Prediction_Dataset.xlsx` — 500 houses × 13 columns, no missing values, no duplicates, no IQR outliers.
+`House_Price_Prediction_Dataset.xlsx` — 500 houses, 12 features + `Price`; no missing values and no duplicates.
 
-| Type | Features |
-|---|---|
-| Numeric | `Area_sqft`, `Bedrooms`, `Bathrooms`, `Stories`, `Parking` |
-| Yes/No | `MainRoad`, `GuestRoom`, `Basement`, `HotWaterHeating`, `AirConditioning`, `PreferredArea` |
-| Categorical | `FurnishingStatus` (Furnished / Semi-Furnished / Unfurnished) |
-| **Target** | `Price` |
+- **Numeric:** Area_sqft, Bedrooms, Bathrooms, Stories, Parking
+- **Yes/No:** MainRoad, GuestRoom, Basement, HotWaterHeating, AirConditioning, PreferredArea
+- **Categorical:** FurnishingStatus (Furnished / Semi-Furnished / Unfurnished)
+- **Target:** Price
 
-## 🔬 Methodology
+## 🔬 Workflow
 
-1. **Data validation** – shape, dtypes, missing values, duplicates, IQR outlier check.
-2. **EDA** – price/area distributions, price vs. every feature, annotated correlation heatmap.
-3. **Train/test split (80/20)** – the test set is touched only once, at the end.
-4. **Pipeline** – `ColumnTransformer` (StandardScaler for numeric, One-Hot for categorical) + model, so encoding is fitted on training data only and the model accepts **raw** input.
-5. **Model comparison** – Linear, Ridge, Decision Tree, Random Forest, Gradient Boosting with 5-fold CV (R², RMSE, MAE).
-6. **Tuning** – `GridSearchCV` on the best model family.
-7. **Final evaluation** – test metrics, train-vs-test gap, mean-predictor baseline.
-8. **Diagnostics** – actual-vs-predicted, residual plot, residual histogram.
-9. **Interpretation** – permutation importance on the original columns.
-10. **Deployment-style prediction** – predict a new house from raw values; model saved with `joblib`.
+1. Data loading and understanding (shape, dtypes, statistics)
+2. Data quality checks (missing values, duplicates)
+3. Exploratory data analysis (distributions, scatter plots, annotated correlation matrix)
+4. Preprocessing: Yes/No columns label-encoded, `FurnishingStatus` one-hot encoded (it has no natural order)
+5. 80/20 train-test split (`random_state=42`)
+6. Models: Linear Regression, Decision Tree, Random Forest
+7. Evaluation with MAE, MSE, RMSE and R²; automatic best-model selection by R²
+8. Feature importance (Random Forest)
+9. Price prediction for a new house using the best model
+10. Residual analysis, business insights and limitations
 
 ## 📊 Results
 
-Cross-validation on the training set (5-fold):
-
-| Model | CV R² | CV RMSE | CV MAE |
+| Model | MAE | RMSE | R² |
 |---|---|---|---|
-| **Ridge** | **0.962** | 482,492 | 419,255 |
-| Linear Regression | 0.962 | 482,580 | 419,114 |
-| Gradient Boosting | 0.93 | 644,938 | 530,235 |
-| Random Forest | 0.91 | 740,980 | 610,492 |
-| Decision Tree | 0.81 | 1,078,806 | 857,502 |
+| **Linear Regression** | **396,577** | **465,810** | **0.9674** |
+| Random Forest | 594,094 | 737,383 | 0.9184 |
+| Decision Tree | 902,338 | 1,129,136 | 0.8086 |
 
-Simple linear models beat the tree-based ones because price in this dataset is almost linear in area.
+Linear Regression wins because price in this dataset is almost linear in area.
 
 <p align="center">
-  <img src="images/model_comparison.png" width="48%">
   <img src="images/correlation_heatmap.png" width="48%">
+  <img src="images/model_comparison_r2.png" width="48%">
 </p>
 <p align="center">
-  <img src="images/actual_vs_predicted_residuals.png" width="100%">
+  <img src="images/actual_vs_predicted.png" width="48%">
+  <img src="images/residual_plot.png" width="48%">
 </p>
 <p align="center">
   <img src="images/feature_importance.png" width="60%">
@@ -69,16 +63,16 @@ Simple linear models beat the tree-based ones because price in this dataset is a
 
 ## 💡 Insights
 
-- **Area is the dominant driver** (correlation 0.89 with price; median ≈ 3,400 per sq ft).
-- Bedrooms and bathrooms add smaller but real signal.
-- Amenities (guest room, basement, hot-water heating, furnishing, …) change average price by < 5 % and add almost nothing once size is known.
-- Residuals are centred near zero with no visible pattern, so the linear model is a good fit.
+- Area is by far the strongest driver of price; bedrooms and bathrooms add a smaller effect.
+- Amenities (guest room, basement, hot-water heating, air conditioning, furnishing) change the average price by only a few percent.
+- Houses in preferred areas are *not* more expensive in this data (average is slightly lower).
+- A simple linear model explains about 97 % of the variation in price.
 
 ## ⚠️ Limitations
 
-- Only 500 rows; the data looks **synthetic** (very clean, near-linear, negligible amenity effects), so scores will not transfer to real listings without retraining.
-- No location, house age or sale date; currency is not stated in the dataset.
-- Predictions outside the training area range (605–4,992 sq ft) are unreliable.
+- Only 500 rows, and the data looks synthetic (very clean, nearly linear), so scores will not transfer to real listings without retraining.
+- No location, house age or sale date; currency is not stated.
+- Predictions outside the training area range (about 600–5,000 sq ft) are unreliable.
 
 ## 🚀 Run it
 
@@ -86,31 +80,18 @@ Simple linear models beat the tree-based ones because price in this dataset is a
 git clone https://github.com/hemanthreddy2105/House-Price-Prediction-ML.git
 cd House-Price-Prediction-ML
 pip install -r requirements.txt
-jupyter notebook House_Price_Prediction.ipynb   # Restart & Run All
+jupyter notebook House_pricing_analysis.ipynb   # Restart & Run All
 ```
 
-Or open the notebook in Google Colab and upload `data/House_Price_Prediction_Dataset.xlsx` next to it.
-
-Use the saved model:
-
-```python
-import joblib, pandas as pd
-model = joblib.load("models/house_price_model.joblib")
-house = pd.DataFrame([{"Area_sqft": 1600, "Bedrooms": 3, "Bathrooms": 2, "Stories": 1,
-    "MainRoad": "Yes", "GuestRoom": "No", "Basement": "No", "HotWaterHeating": "No",
-    "AirConditioning": "Yes", "Parking": 1, "PreferredArea": "Yes",
-    "FurnishingStatus": "Semi-Furnished"}])
-print(model.predict(house)[0])
-```
+Or open the notebook in Google Colab and upload `House_Price_Prediction_Dataset.xlsx` next to it.
 
 ## 📁 Project structure
 
 ```
 House-Price-Prediction-ML/
-├── House_Price_Prediction.ipynb   # full analysis with saved outputs
-├── data/House_Price_Prediction_Dataset.xlsx
-├── images/                        # figures generated by the notebook
-├── models/house_price_model.joblib
+├── House_pricing_analysis.ipynb        # full analysis (with outputs)
+├── House_Price_Prediction_Dataset.xlsx
+├── images/                             # figures saved by the notebook
 ├── requirements.txt
 ├── LICENSE
 └── README.md
@@ -120,5 +101,3 @@ House-Price-Prediction-ML/
 
 **Hemanth Reddy** — B.Sc. Economics (Data Science), Shiv Nadar University Chennai
 GitHub: [@hemanthreddy2105](https://github.com/hemanthreddy2105)
-
-If this helped you, consider giving it a ⭐!
